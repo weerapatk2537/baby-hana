@@ -1,10 +1,9 @@
-// วางค่าจาก Firebase Console > Project settings > Your apps > Web app (SDK setup and configuration > Config)
-// ค่าเหล่านี้เปิดเผยได้ ไม่ใช่รหัสลับ การป้องกันข้อมูลอยู่ที่ firestore.rules
+// Firebase Web App config for baby-hana-dev (public by design; data is protected by firestore.rules)
 export const firebaseConfig = {
-  apiKey: "PASTE_API_KEY",
-  authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_PROJECT_ID.appspot.com",
-  messagingSenderId: "PASTE_SENDER_ID",
-  appId: "PASTE_APP_ID",
+  apiKey: "AIzaSyAmEr0uikadboJyfyrD-ANjplFBYRmN-no",
+  authDomain: "baby-hana-dev.firebaseapp.com",
+  projectId: "baby-hana-dev",
+  storageBucket: "baby-hana-dev.firebasestorage.app",
+  messagingSenderId: "821563825818",
+  appId: "1:821563825818:web:124adb45dd9a66457c0923",
 };
