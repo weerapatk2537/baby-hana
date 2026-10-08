@@ -132,6 +132,9 @@ main { max-width: 1240px; margin: 0 auto; padding-inline: clamp(16px, 3vw, 40px)
 .chip.pink { background: var(--pink-soft); border-color: transparent; }
 .chip.sky { background: var(--sky-soft); border-color: transparent; }
 .chip.purple { background: var(--purple-soft); border-color: transparent; }
+.chip-link { color: var(--fg); text-decoration: none; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+.chip-link:hover { transform: translateY(-1px); box-shadow: var(--shadow); text-decoration: underline; text-underline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .chip-link { transition: none; } .chip-link:hover { transform: none; } }
 .chip.ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
 .sparkle { position: absolute; color: var(--pink); opacity: .7; font-size: 18px; animation: float 6s ease-in-out infinite; }
 @keyframes float { 50% { transform: translateY(-6px) rotate(10deg); } }
@@ -280,7 +283,7 @@ textarea { resize: vertical; min-height: 64px; }
     <div class="meta">
       <span class="chip pink">13 – 15 ตุลาคม 2026</span>
       <span class="chip sky">เวลาเยี่ยม 09:00 – 20:00 น.</span>
-      <span class="chip purple">📍 โรงพยาบาลนนทเวช ชั้น 9 ห้อง 911</span>
+      <a class="chip purple chip-link" href="https://maps.app.goo.gl/YeFdDoS6LReiFuBG8" target="_blank" rel="noopener" title="เปิดใน Google Maps">📍 โรงพยาบาลนนทเวช ชั้น 9 ห้อง 911 <span aria-hidden="true">↗</span></a>
     </div>
   </section>
 
