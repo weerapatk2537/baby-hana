@@ -258,36 +258,13 @@ textarea { resize: vertical; min-height: 64px; }
 .btn.danger { background: var(--red); }
 </style>
 <style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
-<style>
-/* Display-only page: visit info + gift list */
-.visit { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; align-items: start; }
-@media (max-width: 820px) { .visit { grid-template-columns: minmax(0, 1fr); } }
-.days { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-@media (max-width: 480px) { .days { gap: 8px; } }
-.daycard { border-radius: 18px; padding: 16px 12px; text-align: center; background: var(--cal-head); }
-.daycard .dow { font-size: 13px; font-weight: 600; color: var(--muted); }
-.daycard .num { font-size: clamp(34px, 6vw, 44px); font-weight: 800; line-height: 1.1; color: var(--pink-deep); }
-.daycard .mon { font-size: 13px; font-weight: 600; }
-.daycard .hrs { margin-top: 8px; font-size: 13px; font-variant-numeric: tabular-nums; background: var(--surface); border-radius: 999px; padding: 2px 8px; display: inline-block; }
-.place { display: grid; gap: 6px; }
-.place .big { font-size: 20px; font-weight: 700; }
-.place .room { display: inline-flex; gap: 8px; flex-wrap: wrap; }
-.maplink { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; color: var(--accent); font-weight: 600; text-decoration: none; }
-.maplink:hover { text-decoration: underline; }
-.notes { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 8px; }
-.notes li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 14px; background: var(--surface-2); font-size: 14px; }
-.notes li span:first-child { flex: none; }
-.gifts.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (max-width: 820px) { .gifts.two { grid-template-columns: minmax(0, 1fr); } }
-.giftnote { margin: 0 0 16px; padding: 12px 16px; border-radius: 14px; background: var(--pink-soft); font-size: 14px; }
-</style>
 </head>
 <body>
 <header class="topbar">
   <div class="topbar-in">
     <div class="brand"><img class="avatar" alt="" src="data:image/jpeg;base64,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"><span class="nm">WELCOME HANA <span class="th">(ฮานะ)</span></span></div>
     <nav class="tabs" aria-label="ไปยังส่วน">
-      <button class="tab" type="button" id="tab-visit" aria-current="true" data-view="visit">Visit</button>
+      <button class="tab" type="button" id="tab-register" aria-current="true" data-view="register">Register</button>
       <button class="tab" type="button" id="tab-gifts" aria-current="false" data-view="gifts">Gifts</button>
     </nav>
   </div>
@@ -299,7 +276,7 @@ textarea { resize: vertical; min-height: 64px; }
     <div class="twinkles" id="twinkles" aria-hidden="true"></div>
     <div class="eyebrow">Hello, little one</div>
     <h1>Welcome BABY HANA</h1>
-    <p>ขอบคุณที่อยากมาเยี่ยมน้องฮานะนะคะ ทักหาคุณแม่ก่อนมา เพื่อให้คุณแม่ได้พักผ่อนและเตรียมต้อนรับได้ทัน</p>
+    <p>ขอบคุณที่อยากมาเยี่ยมน้องฮานะนะคะ ลงทะเบียนวันและเวลาที่สะดวก เพื่อให้คุณแม่ได้พักผ่อนและเตรียมต้อนรับได้ทัน</p>
     <div class="meta">
       <span class="chip pink">13 – 15 ตุลาคม 2026</span>
       <span class="chip sky">เวลาเยี่ยม 09:00 – 20:00 น.</span>
@@ -307,106 +284,135 @@ textarea { resize: vertical; min-height: 64px; }
     </div>
   </section>
 
-  <section id="view-visit" class="page-sec" aria-labelledby="h-visit">
-    <div class="sec-head"><span class="sec-eyebrow">Visit</span><h2 id="h-visit">มาเยี่ยมน้องฮานะ</h2></div>
-    <div class="visit">
+  <div id="dbNotice" class="msg err notice" hidden></div>
+  <div class="adminbar" id="adminBar" hidden>
+    <span class="badge-admin">Admin</span>
+    <span id="adminWho"></span>
+    <span class="hint" id="adminStats"></span>
+    <button class="btn ghost sm" type="button" id="logoutBtn">ออกจากระบบ</button>
+  </div>
+
+  <!-- REGISTER -->
+  <section id="view-register" class="page-sec" aria-labelledby="h-register">
+    <div class="sec-head"><span class="sec-eyebrow">Register</span><h2 id="h-register">ลงทะเบียนเข้าเยี่ยม</h2></div>
+    <div class="reg">
       <div class="card">
-        <div class="section-title"><h2>วันที่เยี่ยมได้</h2><span class="hint">เวลา 09:00 – 20:00 น. ทุกวัน</span></div>
-        <div class="days">
-          <div class="daycard"><div class="dow">วันอังคาร</div><div class="num">13</div><div class="mon">ต.ค. 2026</div><div class="hrs">09:00 – 20:00</div></div>
-          <div class="daycard"><div class="dow">วันพุธ</div><div class="num">14</div><div class="mon">ต.ค. 2026</div><div class="hrs">09:00 – 20:00</div></div>
-          <div class="daycard"><div class="dow">วันพฤหัสบดี</div><div class="num">15</div><div class="mon">ต.ค. 2026</div><div class="hrs">09:00 – 20:00</div></div>
+        <div class="section-title">
+          <h2>เลือกวันและเวลา</h2>
+          <span class="hint">แตะหรือคลิกช่องเวลา (บนคอมลากเพื่อเลือกช่วงได้)</span>
         </div>
-        <ul class="notes">
-          <li><span>💬</span><span>ทักหาคุณแม่หรือคุณพ่อก่อนมานะคะ จะได้นัดเวลาไม่ให้ชนกัน</span></li>
-          <li><span>🧼</span><span>ล้างมือก่อนจับน้องทุกครั้งนะคะ</span></li>
-          <li><span>🤒</span><span>ถ้ารู้สึกไม่สบาย มีไข้ ไอ หรือเป็นหวัด ขอเลื่อนไปก่อนนะคะ</span></li>
-        </ul>
+        <div class="cal-wrap"><div class="cal" id="cal"></div></div>
+        <div class="legend">
+          <span style="--c: var(--pink-deep)">ที่คุณเลือก</span>
+          <span style="--c: var(--red-soft); --b: var(--red)">มีคนจองแล้ว (Busy)</span>
+          <span style="--c: var(--purple-soft); --b: var(--purple)">ที่คุณลงทะเบียนไว้</span>
+        </div>
       </div>
-      <div class="card place">
-        <div class="section-title"><h2>สถานที่</h2></div>
-        <div class="big">โรงพยาบาลนนทเวช</div>
-        <div class="room"><span class="chip pink">ชั้น 9</span><span class="chip purple">ห้อง 911</span></div>
-        <a class="maplink" href="https://www.google.com/maps/search/?api=1&amp;query=%E0%B9%82%E0%B8%A3%E0%B8%87%E0%B8%9E%E0%B8%A2%E0%B8%B2%E0%B8%9A%E0%B8%B2%E0%B8%A5%E0%B8%99%E0%B8%99%E0%B8%97%E0%B9%80%E0%B8%A7%E0%B8%8A" target="_blank" rel="noopener">เปิดแผนที่ใน Google Maps ↗</a>
+
+      <div class="card">
+        <div class="section-title"><h2>กรอกข้อมูลผู้เยี่ยม</h2></div>
+        <form id="regForm" novalidate>
+          <div class="field">
+            <label for="f-name">ชื่อผู้เยี่ยม</label>
+            <input type="text" id="f-name" placeholder="เช่น ซายน์" maxlength="80" autocomplete="name">
+          </div>
+          <div class="field">
+            <label for="f-count">จำนวนผู้เข้าเยี่ยม</label>
+            <div class="stepper">
+              <button type="button" id="cMinus" aria-label="ลดจำนวน">−</button>
+              <input type="number" id="f-count" min="1" max="20" value="1" inputmode="numeric">
+              <button type="button" id="cPlus" aria-label="เพิ่มจำนวน">+</button>
+              <span class="hint">คน</span>
+            </div>
+          </div>
+          <div class="field">
+            <span class="lbl">วันที่</span>
+            <div class="datepills" id="datePills"></div>
+          </div>
+          <div class="field">
+            <span class="lbl">เวลา</span>
+            <div class="row2">
+              <select id="f-start" aria-label="เวลาเริ่ม"></select>
+              <select id="f-end" aria-label="เวลาสิ้นสุด"></select>
+            </div>
+          </div>
+          <div class="field">
+            <span class="lbl">ของเยี่ยม <span class="hint">(ไม่บังคับนะคะ มาด้วยใจเฉย ๆ ได้เลย 💕 ให้ใส่ไว้เผื่อคนอื่นจะได้ไม่ซื้อซ้ำเฉย ๆ น้าาา)</span></span>
+            <div class="giftpick">
+              <select id="f-giftsel" aria-label="เลือกของที่ยังขาด"></select>
+              <div class="picked" id="giftPicked"></div>
+            </div>
+            <textarea id="f-gift" placeholder="ของเยี่ยมอื่น ๆ เช่น ผ้าอ้อม Size NB 1 แพ็ค" maxlength="300"></textarea>
+          </div>
+          <div class="summary" id="summary"></div>
+          <button class="btn" type="submit" id="submitBtn">ลงทะเบียน</button>
+          <div id="formMsg" class="msg" hidden></div>
+        </form>
       </div>
     </div>
+
   </section>
 
+  <!-- GIFTS -->
   <section id="view-gifts" class="page-sec" aria-labelledby="h-gifts">
     <div class="sec-head"><span class="sec-eyebrow">Gifts</span><h2 id="h-gifts">ของสำหรับน้องฮานะ</h2>
       <p class="hint">เช็กก่อนซื้อได้ว่าอะไรมีแล้ว อะไรยังขาด จะได้ไม่ซื้อซ้ำกันนะคะ</p></div>
-    <p class="giftnote">ไม่บังคับนะคะ มาด้วยใจเฉย ๆ ได้เลย 💕 ถ้าอยากซื้ออะไรมา ทักบอกคุณแม่ก่อน จะได้ไม่ซ้ำกับคนอื่นน้าาา</p>
     <div class="stats">
       <div class="stat have"><div class="n" id="sHave">0</div><div class="l">มีแล้ว</div></div>
       <div class="stat need"><div class="n" id="sNeed">0</div><div class="l">ยังขาด</div></div>
       <div class="stat bought"><div class="n" id="sBought">0</div><div class="l">มีคนซื้อให้แล้ว</div></div>
     </div>
     <div class="gifts">
-      <div class="card col" style="--c: var(--sky)"><h3><span class="bullet"></span>มีแล้ว</h3><ul class="glist" id="listHave"></ul></div>
-      <div class="card col" style="--c: var(--pink)"><h3><span class="bullet"></span>ของที่ยังขาด</h3><ul class="glist" id="listNeed"></ul></div>
-      <div class="card col" style="--c: var(--purple)"><h3><span class="bullet"></span>มีคนซื้อให้แล้ว</h3><ul class="glist" id="listBought"></ul></div>
+      <div class="card col" style="--c: var(--sky)">
+        <h3><span class="bullet"></span>มีแล้ว</h3>
+        <ul class="glist" id="listHave"></ul>
+      </div>
+      <div class="card col" style="--c: var(--pink)">
+        <h3><span class="bullet"></span>ของที่ยังขาด</h3>
+        <ul class="glist" id="listNeed"></ul>
+      </div>
+      <div class="card col" style="--c: var(--purple)">
+        <h3><span class="bullet"></span>มีคนซื้อให้แล้ว</h3>
+        <ul class="glist" id="listBought"></ul>
+      </div>
+    </div>
+
+    <div class="card admin" id="adminPanel" hidden>
+      <div class="section-title">
+        <h2>เพิ่มรายการของ</h2>
+        <span class="badge-admin">Admin</span>
+      </div>
+      <form id="addForm" class="addrow">
+        <input type="text" id="a-name" placeholder="ชื่อของ เช่น ขวดนม 4 oz" maxlength="80">
+        <input type="text" id="a-note" placeholder="รายละเอียด (ไม่บังคับ)" maxlength="120">
+        <select id="a-status" aria-label="สถานะ">
+          <option value="need">ยังขาด</option>
+          <option value="have">มีแล้ว</option>
+        </select>
+        <button class="btn sm" type="submit">เพิ่ม</button>
+      </form>
+      <p class="hint" style="margin:10px 0 0">กด ✓ เพื่อย้ายไป "มีแล้ว", กด ↺ เพื่อย้ายกลับเป็น "ยังขาด" หรือกด ลบ เพื่อเอาออก</p>
     </div>
   </section>
 </main>
 
-<footer class="foot"><span>Made with love for Baby Hana 🌼</span></footer>
+<footer class="foot">
+  <span>Made with love for Baby Hana 🌼</span>
+  <button class="iconbtn" type="button" id="loginBtn">เข้าสู่ระบบ Admin</button>
+</footer>
 
-<script>
-/* ===== แก้รายการของตรงนี้ แล้ว push ขึ้น GitHub ใหม่ =====
-   ใส่เป็น "ชื่อของ" หรือ "ชื่อของ | รายละเอียด" ก็ได้ เช่น "ขวดนม | 4 oz 2 ขวด" */
-const GIFTS = {
-  have: [
-  ],
-  need: [
-  ],
-  bought: [
-  ],
-};
-/* ======================================================= */
+<dialog id="evtDialog" class="evt-dialog">
+  <form method="dialog">
+    <h3 id="dName"></h3>
+    <div class="hint" id="dWhen"></div>
+    <div id="dGifts" class="dgifts"></div>
+    <div class="dacts">
+      <button class="btn ghost sm" value="close">ปิด</button>
+      <button class="btn sm danger" type="button" id="dDelete">ลบรายการนี้</button>
+    </div>
+  </form>
+</dialog>
 
-(() => {
-  const $ = (id) => document.getElementById(id);
-  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-
-  $("tickerTrack").innerHTML = Array(2 * 14).fill('<span>HANA<i>🌼</i></span>').join("");
-
-  // Hero twinkles: a sparse scatter of four-point diamonds
-  const colors = ["var(--pink)", "var(--purple)", "var(--sky)", "var(--accent)"];
-  const n = window.innerWidth < 520 ? 6 : 10, placed = [];
-  let tw = "";
-  for (let i = 0, tries = 0; i < n && tries < 200; tries++) {
-    const x = 3 + Math.random() * 94, y = 6 + Math.random() * 86;
-    if (placed.some(([px, py]) => Math.hypot(px - x, (py - y) * .4) < 14)) continue;
-    placed.push([x, y]);
-    tw += `<span class="tw" style="left:${x.toFixed(1)}%;top:${y.toFixed(1)}%;--s:${(9 + Math.random() * 9).toFixed(1)}px;--c:${colors[i % colors.length]};--d:${(2 + Math.random() * 2).toFixed(2)}s;--delay:-${(Math.random() * 4).toFixed(2)}s"></span>`;
-    i++;
-  }
-  $("twinkles").innerHTML = tw;
-
-  // Gift lists
-  const item = (s, done) => {
-    const [name, note] = String(s).split("|").map((t) => t.trim());
-    return `<li class="gitem ${done ? "done" : ""}"><span class="box">${done ? "✓" : ""}</span><span class="txt">${esc(name)}${note ? `<small>${esc(note)}</small>` : ""}</span></li>`;
-  };
-  const fill = (id, list, done, empty) => { $(id).innerHTML = list.length ? list.map((s) => item(s, done)).join("") : `<li class="empty">${empty}</li>`; };
-  fill("listHave", GIFTS.have, true, "กำลังอัปเดตรายการ");
-  fill("listNeed", GIFTS.need, false, "กำลังอัปเดตรายการ");
-  fill("listBought", GIFTS.bought, true, "ยังไม่มีรายการ");
-  $("sHave").textContent = GIFTS.have.length;
-  $("sNeed").textContent = GIFTS.need.length;
-  $("sBought").textContent = GIFTS.bought.length;
-
-  // Menu jumps to a section and highlights the one in view
-  const mark = (v) => document.querySelectorAll(".tab").forEach((t) => t.setAttribute("aria-current", String(t.dataset.view === v)));
-  document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => {
-    mark(t.dataset.view);
-    $("view-" + t.dataset.view).scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
-  }));
-  if ("IntersectionObserver" in window) {
-    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) mark(e.target.id.replace("view-", "")); }), { rootMargin: "-45% 0px -50% 0px" });
-    ["visit", "gifts"].forEach((v) => io.observe($("view-" + v)));
-  }
-})();
-</script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
