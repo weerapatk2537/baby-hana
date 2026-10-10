@@ -34,6 +34,7 @@ const state = {
   editing: null,    // slot id being edited, or null when registering a new visit
 };
 const isMine = (v) => !!state.uid && v.owner === state.uid;
+const canEdit = (v) => state.isAdmin || isMine(v);
 
 /* ---------- HANA ticker: two identical halves so the loop is seamless ---------- */
 $("tickerTrack").innerHTML = Array(2 * 14).fill('<span>HANA<i>🌼</i></span>').join("");
@@ -98,8 +99,8 @@ cal.addEventListener("pointerdown", (e) => {
   const booked = e.target.closest(".evt[data-id]");
   if (booked) {
     const v = state.slots.find((s) => s.id === booked.dataset.id);
-    if (v && isMine(v)) { startEdit(v.id); return; }
     if (state.isAdmin) { openBooking(booked.dataset.id); return; }
+    if (v && isMine(v)) { startEdit(v.id); return; }
   }
   const dayEl = e.target.closest(".day");
   if (!dayEl) return;
@@ -310,14 +311,14 @@ function showNotice(t) { $("dbNotice").textContent = t; $("dbNotice").hidden = !
 let fb = null; // { db } once Firebase has started
 async function startEdit(id) {
   const v = state.slots.find((s) => s.id === id);
-  if (!v || !isMine(v) || !fb) return;
+  if (!v || !canEdit(v) || !fb) return;
   state.editing = id;
   setSel(v.date, v.start, v.end);
   countEl.value = String(v.count || 1);
   picked.length = 0; picked.push(...(v.giftIds || []));
   $("f-gift").value = v.giftText || "";
-  $("f-name").value = "";
-  $("formTitle").textContent = "แก้ไขการลงทะเบียน";
+  $("f-name").value = state.names[id] || "";
+  $("formTitle").textContent = isMine(v) ? "แก้ไขการลงทะเบียน" : "แก้ไขการลงทะเบียน (Admin)";
   $("editBadge").hidden = false;
   $("editActs").hidden = false;
   $("submitBtn").textContent = "บันทึกการแก้ไข";
@@ -425,6 +426,7 @@ function start() {
     $("dDelete").textContent = "ลบรายการนี้"; $("dDelete").dataset.confirm = "";
     dlg.showModal();
   };
+  $("dEdit").addEventListener("click", () => { const id = openId; dlg.close(); startEdit(id); });
   $("dDelete").addEventListener("click", async (e) => {
     const b = e.currentTarget;
     if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "กดอีกครั้งเพื่อยืนยัน"; return; }
