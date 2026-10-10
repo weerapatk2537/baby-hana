@@ -259,6 +259,20 @@ textarea { resize: vertical; min-height: 64px; }
 .dgifts { margin-block: 12px; font-size: 14px; }
 .dacts { display: flex; gap: 8px; justify-content: flex-end; }
 .btn.danger { background: var(--red); }
+
+/* Visitor's own bookings + edit mode */
+.mybook { display: grid; gap: 8px; margin-bottom: 16px; padding: 12px; border-radius: 16px; background: var(--purple-soft); }
+.mybook h3 { font-size: 14px; font-weight: 700; margin: 0; }
+.mybook-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: var(--surface); font-size: 14px; }
+.mybook-item .when { flex: 1; min-width: 0; font-variant-numeric: tabular-nums; }
+.mybook-item .when small { display: block; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mybook-item.editing { outline: 2px solid var(--purple); }
+.edit-badge { font-size: 12px; font-weight: 700; color: var(--on-pink); background: var(--purple); padding: 2px 10px; border-radius: 999px; }
+.edit-acts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; }
+.danger-text { color: var(--red); }
+.evt.mine { pointer-events: auto; cursor: pointer; }
+.evt.mine:hover { outline: 2px solid var(--purple); }
+.evt.editing { visibility: hidden; }
 </style>
 <style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
 </head>
@@ -312,8 +326,9 @@ textarea { resize: vertical; min-height: 64px; }
         </div>
       </div>
 
-      <div class="card">
-        <div class="section-title"><h2>กรอกข้อมูลผู้เยี่ยม</h2></div>
+      <div class="card" id="formCard">
+        <div class="mybook" id="myBookings" hidden></div>
+        <div class="section-title"><h2 id="formTitle">กรอกข้อมูลผู้เยี่ยม</h2><span class="edit-badge" id="editBadge" hidden>กำลังแก้ไข</span></div>
         <form id="regForm" novalidate>
           <div class="field">
             <label for="f-name">ชื่อผู้เยี่ยม</label>
@@ -349,6 +364,10 @@ textarea { resize: vertical; min-height: 64px; }
           </div>
           <div class="summary" id="summary"></div>
           <button class="btn" type="submit" id="submitBtn">ลงทะเบียน</button>
+          <div class="edit-acts" id="editActs" hidden>
+            <button class="btn ghost sm" type="button" id="cancelEditBtn">ไม่แก้ไขแล้ว</button>
+            <button class="btn ghost sm danger-text" type="button" id="cancelBookingBtn">ยกเลิกการจองนี้</button>
+          </div>
           <div id="formMsg" class="msg" hidden></div>
         </form>
       </div>

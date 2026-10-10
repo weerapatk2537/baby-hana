@@ -1,16 +1,17 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getFirestore, collection, doc, onSnapshot, writeBatch, addDoc, updateDoc, deleteDoc, serverTimestamp,
+  getFirestore, collection, doc, onSnapshot, writeBatch, addDoc, updateDoc, deleteDoc, getDoc, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
-  getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
+  getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 /*
  * Data model (see firestore.rules):
- *   slots/{id}   public  — date, start, end, count, giftIds, giftText (no visitor name)
- *   visits/{id}  admin   — name of the visitor for slots/{id}
+ *   slots/{id}   public  — date, start, end, count, giftIds, giftText, owner (no visitor name)
+ *   visits/{id}  private — name of the visitor for slots/{id}; admin reads all, the owner reads their own
+ * Visitors get a silent anonymous Firebase uid; "owner" is that uid, so each browser can edit its own bookings.
  *   gifts/{id}   public  — name, note, status ("have" | "need"); admin writes
  */
 
@@ -29,12 +30,10 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 const state = {
   slots: [], gifts: [], names: {}, isAdmin: false,
   sel: { date: DAYS[0], start: 10 * 60, end: 11 * 60 },
-  mine: loadMine(),
+  uid: null,        // this browser's anonymous (or admin) Firebase uid
+  editing: null,    // slot id being edited, or null when registering a new visit
 };
-
-// This browser's own registrations, so they show as "ที่คุณลงทะเบียนไว้" without any login
-function loadMine() { try { return new Set(JSON.parse(localStorage.getItem("hana-mine") || "[]")); } catch (e) { return new Set(); } }
-function saveMine() { try { localStorage.setItem("hana-mine", JSON.stringify([...state.mine])); } catch (e) {} }
+const isMine = (v) => !!state.uid && v.owner === state.uid;
 
 /* ---------- HANA ticker: two identical halves so the loop is seamless ---------- */
 $("tickerTrack").innerHTML = Array(2 * 14).fill('<span>HANA<i>🌼</i></span>').join("");
@@ -97,7 +96,11 @@ const slotIndex = (dayEl, clientY) => {
 };
 cal.addEventListener("pointerdown", (e) => {
   const booked = e.target.closest(".evt[data-id]");
-  if (booked && state.isAdmin) { openBooking(booked.dataset.id); return; }
+  if (booked) {
+    const v = state.slots.find((s) => s.id === booked.dataset.id);
+    if (v && isMine(v)) { startEdit(v.id); return; }
+    if (state.isAdmin) { openBooking(booked.dataset.id); return; }
+  }
   const dayEl = e.target.closest(".day");
   if (!dayEl) return;
   const i = slotIndex(dayEl, e.clientY);
@@ -150,13 +153,13 @@ function renderCalendarEvents() {
     const dayEl = cal.querySelector(`.day[data-day="${d}"]`);
     layoutLanes(state.slots.filter((v) => v.date === d)).forEach(({ v, lane, lanes }) => {
       const el = document.createElement("div");
-      el.className = "evt" + (state.mine.has(v.id) ? " mine" : "");
+      el.className = "evt" + (isMine(v) ? " mine" : "") + (v.id === state.editing ? " editing" : "");
       el.dataset.id = v.id;
       el.style.top = `calc(${(v.start - START_MIN) / STEP * 100 / SLOTS}% + 1px)`;
       el.style.height = `calc(${(v.end - v.start) / STEP * 100 / SLOTS}% - 2px)`;
       el.style.left = `calc(${lane / lanes * 100}% + 2px)`;
       el.style.width = `calc(${100 / lanes}% - 4px)`;
-      const label = state.isAdmin ? esc(state.names[v.id] || "(ไม่มีชื่อ)") : state.mine.has(v.id) ? "ของคุณ" : "Busy";
+      const label = state.isAdmin ? esc(state.names[v.id] || "(ไม่มีชื่อ)") : isMine(v) ? "ของคุณ · แก้ไข" : "Busy";
       el.innerHTML = `<b>${label}</b>${fmt(v.start)}–${fmt(v.end)}${state.isAdmin ? ` · ${v.count} คน` : ""}`;
       dayEl.appendChild(el);
     });
@@ -211,10 +214,10 @@ countEl.addEventListener("blur", clampCount);
 $("f-name").addEventListener("input", renderSelection);
 
 /* ---------- Gift picker ---------- */
-const reservedSet = () => new Set(state.slots.flatMap((v) => v.giftIds || []));
+const reservedSet = (exceptId) => new Set(state.slots.filter((v) => v.id !== exceptId).flatMap((v) => v.giftIds || []));
 const picked = [];
 function renderGiftPick() {
-  const res = reservedSet();
+  const res = reservedSet(state.editing);
   const need = state.gifts.filter((g) => g.status === "need");
   // Drop picks that someone else just bought or the admin removed
   for (let i = picked.length - 1; i >= 0; i--) {
@@ -268,8 +271,30 @@ function renderGifts() {
   }).join("") : `<li class="empty">ยังไม่มีของเยี่ยมจากผู้ลงทะเบียน</li>`;
 }
 
+function renderMyBookings() {
+  const mine = state.slots.filter(isMine).sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start);
+  const box = $("myBookings");
+  box.hidden = !mine.length;
+  if (!mine.length) return;
+  const giftName = Object.fromEntries(state.gifts.map((g) => [g.id, g.name]));
+  box.innerHTML = `<h3>การจองของคุณ (${mine.length})</h3>` + mine.map((v) => {
+    const gifts = [...(v.giftIds || []).map((g) => giftName[g]).filter(Boolean), v.giftText].filter(Boolean).join(", ");
+    return `<div class="mybook-item ${v.id === state.editing ? "editing" : ""}">
+      <span class="when"><b>${dayLabel(v.date)}</b> ${fmt(v.start)}–${fmt(v.end)} น. · ${v.count} คน
+        <small>${gifts ? "🎁 " + esc(gifts) : "ไม่ได้ระบุของเยี่ยม"}</small></span>
+      <button class="btn ghost sm" type="button" data-edit="${esc(v.id)}">${v.id === state.editing ? "กำลังแก้ไข" : "แก้ไข"}</button>
+    </div>`;
+  }).join("");
+}
+$("myBookings").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-edit]");
+  if (b) startEdit(b.dataset.edit);
+});
+
 function renderAll() {
-  renderCalendarEvents(); renderGiftPick(); renderGifts();
+  renderCalendarEvents(); renderGiftPick(); renderGifts(); renderMyBookings();
+  // The booking being edited was cancelled elsewhere (another tab, or the admin)
+  if (state.editing && !state.slots.some((v) => v.id === state.editing)) exitEdit();
   if (state.isAdmin) {
     const people = state.slots.reduce((s, v) => s + (v.count || 0), 0);
     $("adminStats").textContent = `ลงทะเบียน ${state.slots.length} รายการ · ${people} คน · กดที่ช่องในปฏิทินเพื่อดูรายละเอียด`;
@@ -280,6 +305,41 @@ function renderAll() {
 const formMsg = $("formMsg");
 function say(text, kind) { formMsg.textContent = text; formMsg.className = "msg " + kind; formMsg.hidden = false; }
 function showNotice(t) { $("dbNotice").textContent = t; $("dbNotice").hidden = !t; }
+
+/* ---------- Edit an existing booking (owner only) ---------- */
+let fb = null; // { db } once Firebase has started
+async function startEdit(id) {
+  const v = state.slots.find((s) => s.id === id);
+  if (!v || !isMine(v) || !fb) return;
+  state.editing = id;
+  setSel(v.date, v.start, v.end);
+  countEl.value = String(v.count || 1);
+  picked.length = 0; picked.push(...(v.giftIds || []));
+  $("f-gift").value = v.giftText || "";
+  $("f-name").value = "";
+  $("formTitle").textContent = "แก้ไขการลงทะเบียน";
+  $("editBadge").hidden = false;
+  $("editActs").hidden = false;
+  $("submitBtn").textContent = "บันทึกการแก้ไข";
+  $("cancelBookingBtn").textContent = "ยกเลิกการจองนี้"; $("cancelBookingBtn").dataset.confirm = "";
+  formMsg.hidden = true;
+  renderAll();
+  $("formCard").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  try {
+    const snap = await getDoc(doc(fb.db, "visits", id));
+    if (state.editing === id && snap.exists()) { $("f-name").value = snap.data().name || ""; renderSelection(); }
+  } catch (err) { /* name stays empty; the visitor can retype it */ }
+}
+function exitEdit() {
+  state.editing = null;
+  $("formTitle").textContent = "กรอกข้อมูลผู้เยี่ยม";
+  $("editBadge").hidden = true;
+  $("editActs").hidden = true;
+  $("submitBtn").textContent = "ลงทะเบียน";
+  $("f-name").value = ""; $("f-gift").value = ""; picked.length = 0; countEl.value = "1";
+  renderAll(); renderSelection();
+}
+$("cancelEditBtn").addEventListener("click", () => { exitEdit(); formMsg.hidden = true; });
 
 renderSelection();
 renderGiftPick();
@@ -310,12 +370,21 @@ function start() {
     renderAll();
   }, onErr);
 
-  /* Admin: signed in with Google AND allowed by firestore.rules to read visitor names */
+  fb = { db };
+
+  /* Every visitor gets a silent anonymous uid (no login screen) so they can edit their own bookings.
+     Admin: signed in with Google AND allowed by firestore.rules to read every visitor name. */
   let stopNames = null;
+  let authReady;
+  const authReadyP = new Promise((r) => (authReady = r));
   onAuthStateChanged(auth, (user) => {
     if (stopNames) { stopNames(); stopNames = null; }
     setAdmin(false);
-    if (!user) return;
+    if (!user) { signInAnonymously(auth).catch(() => showNotice("เชื่อมต่อไม่สำเร็จ กรุณารีเฟรชหน้า")); return; }
+    state.uid = user.uid;
+    authReady();
+    renderAll();
+    if (user.isAnonymous) return;
     stopNames = onSnapshot(collection(db, "visits"), (snap) => {
       state.names = Object.fromEntries(snap.docs.map((d) => [d.id, d.data().name]));
       if (!state.isAdmin) { setAdmin(true, user.email); showNotice(""); }
@@ -393,29 +462,55 @@ function start() {
     } catch (err) { showNotice("เพิ่มรายการไม่สำเร็จ"); }
   });
 
-  /* Registration: public slot + private name, written together */
+  /* Cancel own booking (edit mode) */
+  $("cancelBookingBtn").addEventListener("click", async (e) => {
+    const b = e.currentTarget, id = state.editing;
+    if (!id) return;
+    if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "กดอีกครั้งเพื่อยืนยันการยกเลิก"; return; }
+    b.disabled = true;
+    try {
+      const batch = writeBatch(db);
+      batch.delete(doc(db, "slots", id));
+      batch.delete(doc(db, "visits", id));
+      await batch.commit();
+      exitEdit();
+      say("ยกเลิกการจองแล้ว", "ok");
+    } catch (err) { b.textContent = "ยกเลิกไม่สำเร็จ ลองใหม่"; b.dataset.confirm = ""; }
+    finally { b.disabled = false; }
+  });
+
+  /* Registration: public slot + private name, written together; edit updates both */
   $("regForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const name = $("f-name").value.trim();
     clampCount();
     if (!name) { say("กรุณากรอกชื่อผู้เยี่ยม", "err"); $("f-name").focus(); return; }
-    const ref = doc(collection(db, "slots"));
-    const slot = {
-      date: state.sel.date, start: state.sel.start, end: state.sel.end, count: +countEl.value,
-      giftIds: [...picked], giftText: $("f-gift").value.trim(), createdAt: serverTimestamp(),
-    };
     $("submitBtn").disabled = true;
     try {
+      await authReadyP;
+      const fields = {
+        date: state.sel.date, start: state.sel.start, end: state.sel.end, count: +countEl.value,
+        giftIds: [...picked], giftText: $("f-gift").value.trim(),
+      };
       const batch = writeBatch(db);
-      batch.set(ref, slot);
-      batch.set(doc(db, "visits", ref.id), { name, createdAt: serverTimestamp() });
-      await batch.commit();
-      state.mine.add(ref.id); saveMine();
-      say(`ลงทะเบียนแล้ว! แล้วพบกัน${dayLabel(slot.date)} เวลา ${fmt(slot.start)} น. 💕`, "ok");
-      $("f-gift").value = ""; picked.length = 0;
-      renderAll();
+      if (state.editing) {
+        const id = state.editing;
+        batch.update(doc(db, "slots", id), { ...fields, updatedAt: serverTimestamp() });
+        batch.update(doc(db, "visits", id), { name, updatedAt: serverTimestamp() });
+        await batch.commit();
+        exitEdit();
+        say(`บันทึกการแก้ไขแล้ว! แล้วพบกัน${dayLabel(fields.date)} เวลา ${fmt(fields.start)} น. 💕`, "ok");
+      } else {
+        const ref = doc(collection(db, "slots"));
+        batch.set(ref, { ...fields, owner: state.uid, createdAt: serverTimestamp() });
+        batch.set(doc(db, "visits", ref.id), { name, owner: state.uid, createdAt: serverTimestamp() });
+        await batch.commit();
+        say(`ลงทะเบียนแล้ว! แล้วพบกัน${dayLabel(fields.date)} เวลา ${fmt(fields.start)} น. 💕 แก้ไขได้ที่ "การจองของคุณ" ด้านบน`, "ok");
+        $("f-gift").value = ""; picked.length = 0;
+        renderAll();
+      }
     } catch (err) {
-      say("ลงทะเบียนไม่สำเร็จ ลองใหม่อีกครั้ง", "err");
+      say(state.editing ? "บันทึกการแก้ไขไม่สำเร็จ ลองใหม่อีกครั้ง" : "ลงทะเบียนไม่สำเร็จ ลองใหม่อีกครั้ง", "err");
     } finally { $("submitBtn").disabled = false; }
   });
 }
